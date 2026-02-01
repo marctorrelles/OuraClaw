@@ -6,7 +6,7 @@ export function defineOuraDataTool() {
   return {
     name: "oura_data",
     description:
-      "Fetch health data from the user's Oura Ring. Returns raw JSON for sleep, readiness, activity, detailed sleep periods, or stress data.",
+      "Fetch health data from the user's Oura Ring. Returns raw JSON. Supports all Oura API v2 endpoints: sleep, readiness, activity, stress, heart rate, SpO2, workouts, sessions, tags, cardiovascular age, resilience, VO2 max, rest mode, sleep time, ring config, and personal info.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -14,7 +14,7 @@ export function defineOuraDataTool() {
           type: "string" as const,
           enum: OURA_ENDPOINTS,
           description:
-            "Data category to fetch: daily_sleep, daily_readiness, daily_activity, sleep (detailed periods), or daily_stress",
+            "Data category to fetch. Common: daily_sleep, daily_readiness, daily_activity, sleep, daily_stress. Also: heartrate, daily_spo2, workout, session, enhanced_tag, daily_cardiovascular_age, daily_resilience, vO2_max, rest_mode_period, sleep_time, ring_configuration, personal_info, tag",
         },
         start_date: {
           type: "string" as const,

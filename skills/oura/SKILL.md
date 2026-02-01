@@ -10,6 +10,8 @@ You have access to the user's Oura Ring data through the `oura_data` tool. Use i
 
 ## Endpoint Reference
 
+### Core (used in daily summaries)
+
 | Endpoint | Returns | Key Fields |
 |----------|---------|------------|
 | `daily_sleep` | Sleep score & contributors | `score`, `contributors.deep_sleep`, `.efficiency`, `.rem_sleep`, `.restfulness`, `.total_sleep` |
@@ -17,6 +19,24 @@ You have access to the user's Oura Ring data through the `oura_data` tool. Use i
 | `daily_activity` | Activity score & metrics | `score`, `steps`, `active_calories`, `total_calories`, `high_activity_time`, `medium_activity_time` |
 | `sleep` | Detailed sleep periods | `duration`, `total_sleep_duration`, `deep_sleep_duration`, `rem_sleep_duration`, `light_sleep_duration`, `efficiency`, `average_heart_rate`, `lowest_heart_rate`, `average_hrv`, `bedtime_start`, `bedtime_end` |
 | `daily_stress` | Stress summary | `stress_high`, `recovery_high`, `day_summary` |
+
+### Additional (available for ad-hoc queries)
+
+| Endpoint | Returns | Key Fields |
+|----------|---------|------------|
+| `heartrate` | Continuous heart rate samples | `bpm`, `source`, `timestamp` |
+| `daily_spo2` | Blood oxygen levels | `spo2_percentage`, `breathing_disturbance_index` |
+| `workout` | Workout sessions | `activity`, `calories`, `duration`, `distance`, `intensity`, `start_datetime`, `end_datetime` |
+| `session` | Mindfulness/breathing sessions | `type`, `mood`, `duration`, `heart_rate`, `hrv` |
+| `enhanced_tag` | User-created tags | `tag_type_code`, `comment`, `timestamp` |
+| `daily_cardiovascular_age` | Cardiovascular age estimate | `vascular_age` |
+| `daily_resilience` | Resilience score & contributors | `level`, `contributors.sleep_recovery`, `.daytime_recovery`, `.stress` |
+| `vO2_max` | VO2 max estimate | `vo2_max`, `timestamp` |
+| `rest_mode_period` | Rest mode periods | `start_day`, `end_day`, `episodes` |
+| `sleep_time` | Recommended sleep times | `recommendation`, `status`, `ideal_bedtime_start`, `ideal_bedtime_end` |
+| `ring_configuration` | Ring hardware info | `color`, `design`, `firmware_version`, `hardware_type`, `set_up_at`, `size` |
+| `personal_info` | User profile | `age`, `weight`, `height`, `biological_sex`, `email` |
+| `tag` | Tags (deprecated, use `enhanced_tag`) | `tag_type_code`, `timestamp` |
 
 ## Usage Instructions
 

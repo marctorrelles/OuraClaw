@@ -6,7 +6,7 @@ import { OuraTokenResponse } from "./types";
 const AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize";
 const TOKEN_URL = "https://api.ouraring.com/oauth/token";
 const REDIRECT_URI = "http://localhost:9876/callback";
-const SCOPES = "daily heartrate spo2";
+const SCOPES = "email personal daily heartrate workout session spo2 tag stress heart_health ring_configuration";
 
 export function buildAuthorizeUrl(clientId: string): string {
   const params = new URLSearchParams({

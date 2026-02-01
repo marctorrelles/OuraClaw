@@ -121,16 +121,42 @@ export interface DailyStress {
 }
 
 export type OuraEndpoint =
-  | "daily_sleep"
-  | "daily_readiness"
   | "daily_activity"
+  | "daily_cardiovascular_age"
+  | "daily_readiness"
+  | "daily_resilience"
+  | "daily_sleep"
+  | "daily_spo2"
+  | "daily_stress"
+  | "enhanced_tag"
+  | "heartrate"
+  | "personal_info"
+  | "rest_mode_period"
+  | "ring_configuration"
+  | "session"
   | "sleep"
-  | "daily_stress";
+  | "sleep_time"
+  | "tag"
+  | "vO2_max"
+  | "workout";
 
 export const OURA_ENDPOINTS: OuraEndpoint[] = [
-  "daily_sleep",
-  "daily_readiness",
   "daily_activity",
-  "sleep",
+  "daily_cardiovascular_age",
+  "daily_readiness",
+  "daily_resilience",
+  "daily_sleep",
+  "daily_spo2",
   "daily_stress",
+  "enhanced_tag",
+  "heartrate",
+  "personal_info",
+  "rest_mode_period",
+  "ring_configuration",
+  "session",
+  "sleep",
+  "sleep_time",
+  "tag",
+  "vO2_max",
+  "workout",
 ];
