@@ -17,15 +17,14 @@ Oura Ring plugin and skill for [OpenClaw](https://github.com/nickarora/openclaw)
 ## Installation
 
 ```bash
-# From ClawHub
-clawhub install ouraclaw
-
-# Or from npm
-npm install @ouraclaw/ouraclaw
+# From npm
+npm install -g @rickybloomfield/ouraclaw
+openclaw plugins install @rickybloomfield/ouraclaw
 
 # Or from source
-git clone https://github.com/your-username/ouraclaw.git
-openclaw plugins install ./ouraclaw
+git clone https://github.com/rickybloomfield/OuraClaw.git
+cd OuraClaw && npm install && npm run build
+openclaw plugins install -l .
 ```
 
 ## Setup

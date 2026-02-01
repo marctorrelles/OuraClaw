@@ -1,12 +1,18 @@
 {
-  "name": "@ouraclaw/ouraclaw",
+  "name": "@rickybloomfield/ouraclaw",
   "version": "0.1.0",
   "description": "Oura Ring plugin and skill for OpenClaw",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "skills",
+    "openclaw.plugin.json"
+  ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
   "openclaw": {
     "extensions": [
@@ -22,6 +28,10 @@
   ],
   "author": "Ricky Bloomfield",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rickybloomfield/OuraClaw"
+  },
   "devDependencies": {
     "@types/node": "^25.1.0",
     "typescript": "^5.4.0"
