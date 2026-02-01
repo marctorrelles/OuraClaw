@@ -1,8 +1,5 @@
 import { defineOuraDataTool } from "./tool";
 import { registerCli } from "./cli";
-import { isTokenExpiringSoon } from "./token-store";
-import { refreshAccessToken } from "./oauth";
-import { saveTokens } from "./token-store";
 import { OuraConfig } from "./types";
 
 export default function ouraclaw(api: any) {
@@ -27,38 +24,4 @@ export default function ouraclaw(api: any) {
     unregisterCronJob: api.unregisterCronJob,
   });
   api.registerCommand(cli);
-
-  // Register background service for proactive token refresh
-  api.registerBackgroundService({
-    id: "ouraclaw-token-refresh",
-    description: "Proactively refreshes Oura API tokens before they expire",
-    intervalMs: 12 * 60 * 60 * 1000, // Every 12 hours
-    handler: async () => {
-      const config = getConfig();
-
-      if (
-        !config.accessToken ||
-        !config.refreshToken ||
-        !config.clientId ||
-        !config.clientSecret
-      ) {
-        return; // Not configured yet
-      }
-
-      if (isTokenExpiringSoon(config)) {
-        try {
-          const tokenResponse = await refreshAccessToken(
-            config.clientId,
-            config.clientSecret,
-            config.refreshToken,
-          );
-          saveTokens(config, tokenResponse, updateConfig);
-        } catch (err: any) {
-          api.log(
-            `[ouraclaw] Token refresh failed: ${err.message}. Token may need manual refresh via setup.`,
-          );
-        }
-      }
-    },
-  });
 }

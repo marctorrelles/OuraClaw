@@ -20,14 +20,6 @@ export function isTokenExpired(config: OuraConfig): boolean {
   return Date.now() > config.tokenExpiresAt - 5 * 60 * 1000;
 }
 
-export function isTokenExpiringSoon(
-  config: OuraConfig,
-  withinMs: number = 48 * 60 * 60 * 1000,
-): boolean {
-  if (!config.tokenExpiresAt) return true;
-  return Date.now() > config.tokenExpiresAt - withinMs;
-}
-
 export async function ensureValidToken(
   config: OuraConfig,
   updateConfig: (updates: Partial<OuraConfig>) => void,
