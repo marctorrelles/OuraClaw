@@ -58,29 +58,67 @@ function openUrl(url: string): void {
   exec(cmd);
 }
 
-function getConfiguredChannels(): string[] {
+interface ChannelTarget {
+  label: string;
+  channel: string;
+  target: string;
+}
+
+function getConfiguredChannelTargets(): ChannelTarget[] {
+  try {
+    const output = execSync("openclaw channels list --json --no-usage", {
+      encoding: "utf-8",
+      timeout: 10_000,
+    });
+    const data = JSON.parse(output);
+    const targets: ChannelTarget[] = [];
+
+    // data is expected to be an object keyed by channel ID,
+    // each with an accounts object keyed by account ID
+    if (data && typeof data === "object") {
+      for (const [channelId, channelConf] of Object.entries(data as Record<string, any>)) {
+        const accounts = channelConf?.accounts;
+        if (accounts && typeof accounts === "object") {
+          for (const [accountId, _accountConf] of Object.entries(accounts as Record<string, any>)) {
+            const target = `${channelId}:${accountId}`;
+            const label = accountId === "default" ? channelId : `${channelId} (${accountId})`;
+            targets.push({ label, channel: channelId, target });
+          }
+        } else {
+          // Channel exists but no sub-accounts — treat the channel itself as the target
+          targets.push({ label: channelId, channel: channelId, target: channelId });
+        }
+      }
+    }
+
+    return targets;
+  } catch {
+    // JSON parse failed or command errored — fall back to text parsing
+    return getConfiguredChannelTargetsFallback();
+  }
+}
+
+function getConfiguredChannelTargetsFallback(): ChannelTarget[] {
   try {
     const output = execSync("openclaw channels list", {
       encoding: "utf-8",
       timeout: 10_000,
     });
-    // Parse channel names from CLI output — each configured channel
-    // appears as a line containing the channel ID
-    const channels: string[] = [];
+    const targets: ChannelTarget[] = [];
     for (const line of output.split("\n")) {
       const trimmed = line.trim();
-      // Skip empty lines, headers, and decoration
       if (!trimmed || trimmed.startsWith("─") || trimmed.startsWith("=")) continue;
-      // Match common channel IDs in the output
       const match = trimmed.match(
         /\b(imessage|signal|slack|discord|telegram|whatsapp|googlechat|mattermost|msteams)\b/i,
       );
       if (match) {
         const id = match[1].toLowerCase();
-        if (!channels.includes(id)) channels.push(id);
+        if (!targets.some((t) => t.channel === id)) {
+          targets.push({ label: id, channel: id, target: id });
+        }
       }
     }
-    return channels;
+    return targets;
   } catch {
     return [];
   }
@@ -160,32 +198,30 @@ async function setupCommand(): Promise<void> {
       console.log("Skipping OAuth — keeping existing tokens.\n");
     }
 
-    // Step 3: Channel preference
-    const configuredChannels = getConfiguredChannels();
-    const channelChoices = ["default (active channel at delivery time)"];
-    if (configuredChannels.length > 0) {
-      channelChoices.push(...configuredChannels);
-    }
+    // Step 3: Channel + target preference
+    const availableTargets = getConfiguredChannelTargets();
 
     let channel = "default";
-    if (channelChoices.length === 1) {
-      console.log("No messaging channels configured. Using default (active channel at delivery time).");
-    } else {
-      // If re-running and they had a channel set, show it as the current value
-      if (isRerun && existing.preferredChannel && existing.preferredChannel !== "default") {
-        console.log(`  Current channel: ${existing.preferredChannel}`);
-      }
-      const channelChoice = await select(rl, "Preferred delivery channel:", channelChoices);
-      channel = channelChoice.startsWith("default") ? "default" : channelChoice;
-    }
     let channelTarget: string | undefined;
 
-    if (channel !== "default") {
-      channelTarget = await ask(
-        rl,
-        `Target for ${channel} (phone number, webhook URL, chat ID, etc.):`,
-        existing.preferredChannel === channel ? existing.preferredChannelTarget : undefined,
-      );
+    if (availableTargets.length === 0) {
+      console.log("No messaging channels configured. Using default (active channel at delivery time).");
+    } else {
+      const choices = [
+        "default (active channel at delivery time)",
+        ...availableTargets.map((t) => t.label),
+      ];
+      if (isRerun && existing.preferredChannel && existing.preferredChannel !== "default") {
+        console.log(`  Current: ${existing.preferredChannel}${existing.preferredChannelTarget ? ` → ${existing.preferredChannelTarget}` : ""}`);
+      }
+      const chosen = await select(rl, "Deliver summaries to:", choices);
+      if (!chosen.startsWith("default")) {
+        const match = availableTargets.find((t) => t.label === chosen);
+        if (match) {
+          channel = match.channel;
+          channelTarget = match.target;
+        }
+      }
     }
 
     updateConfig({
