@@ -1,5 +1,5 @@
 import readline from "readline";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 import { OuraConfig } from "./types";
 import {
   buildAuthorizeUrl,
@@ -58,24 +58,35 @@ function openUrl(url: string): void {
   exec(cmd);
 }
 
-function getConfiguredChannels(openclawConfig: any): string[] {
-  const channels: string[] = [];
-  const channelsConfig = openclawConfig?.channels;
-  if (channelsConfig && typeof channelsConfig === "object") {
-    for (const channelId of Object.keys(channelsConfig)) {
-      const channelConf = channelsConfig[channelId];
-      // A channel is configured if it has at least one account
-      if (channelConf?.accounts && Object.keys(channelConf.accounts).length > 0) {
-        channels.push(channelId);
+function getConfiguredChannels(): string[] {
+  try {
+    const output = execSync("openclaw channels list", {
+      encoding: "utf-8",
+      timeout: 10_000,
+    });
+    // Parse channel names from CLI output — each configured channel
+    // appears as a line containing the channel ID
+    const channels: string[] = [];
+    for (const line of output.split("\n")) {
+      const trimmed = line.trim();
+      // Skip empty lines, headers, and decoration
+      if (!trimmed || trimmed.startsWith("─") || trimmed.startsWith("=")) continue;
+      // Match common channel IDs in the output
+      const match = trimmed.match(
+        /\b(imessage|signal|slack|discord|telegram|whatsapp|googlechat|mattermost|msteams)\b/i,
+      );
+      if (match) {
+        const id = match[1].toLowerCase();
+        if (!channels.includes(id)) channels.push(id);
       }
     }
+    return channels;
+  } catch {
+    return [];
   }
-  return channels;
 }
 
 export function registerCli(api: any) {
-  const openclawConfig = api.config;
-
   api.registerCli(
     ({ program }: { program: any }) => {
       const ouraclaw = program
@@ -85,7 +96,7 @@ export function registerCli(api: any) {
       ouraclaw
         .command("setup")
         .description("Set up Oura Ring connection and scheduled summaries")
-        .action(() => setupCommand(openclawConfig));
+        .action(() => setupCommand());
 
       ouraclaw
         .command("status")
@@ -101,7 +112,7 @@ export function registerCli(api: any) {
   );
 }
 
-async function setupCommand(openclawConfig: any): Promise<void> {
+async function setupCommand(): Promise<void> {
   const rl = createPromptInterface();
 
   try {
@@ -134,7 +145,7 @@ async function setupCommand(openclawConfig: any): Promise<void> {
     console.log("Tokens saved successfully.\n");
 
     // Step 3: Channel preference
-    const configuredChannels = getConfiguredChannels(openclawConfig);
+    const configuredChannels = getConfiguredChannels();
     const channelChoices = ["default (active channel at delivery time)"];
     if (configuredChannels.length > 0) {
       channelChoices.push(...configuredChannels);
