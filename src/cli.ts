@@ -8,7 +8,7 @@ import { saveTokens } from "./token-store";
 import { createCronJobs, removeCronJobs } from "./cron-setup";
 import { fetchOuraData } from "./oura-client";
 
-interface CliContext {
+export interface CliContext {
   getConfig: () => OuraConfig;
   updateConfig: (updates: Partial<OuraConfig>) => void;
   prompt: (message: string, defaultValue?: string) => Promise<string>;
@@ -20,25 +20,30 @@ interface CliContext {
   unregisterCronJob: (id: string) => void;
 }
 
-export function registerCli(ctx: CliContext) {
-  return {
-    name: "ouraclaw",
-    description: "OuraClaw — Oura Ring integration",
-    subcommands: {
-      setup: {
-        description: "Set up Oura Ring connection and scheduled summaries",
-        handler: () => setupCommand(ctx),
-      },
-      status: {
-        description: "Show current OuraClaw connection status",
-        handler: () => statusCommand(ctx),
-      },
-      test: {
-        description: "Fetch today's Oura data to verify connection",
-        handler: () => testCommand(ctx),
-      },
+export function registerCli(api: any, ctx: CliContext) {
+  api.registerCli(
+    ({ program }: { program: any }) => {
+      const ouraclaw = program
+        .command("ouraclaw")
+        .description("OuraClaw — Oura Ring integration");
+
+      ouraclaw
+        .command("setup")
+        .description("Set up Oura Ring connection and scheduled summaries")
+        .action(() => setupCommand(ctx));
+
+      ouraclaw
+        .command("status")
+        .description("Show current OuraClaw connection status")
+        .action(() => statusCommand(ctx));
+
+      ouraclaw
+        .command("test")
+        .description("Fetch today's Oura data to verify connection")
+        .action(() => testCommand(ctx));
     },
-  };
+    { commands: ["ouraclaw"] },
+  );
 }
 
 async function setupCommand(ctx: CliContext): Promise<void> {

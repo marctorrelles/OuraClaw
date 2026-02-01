@@ -11,8 +11,8 @@ export default function ouraclaw(api: any) {
   const tool = defineOuraDataTool(getConfig, updateConfig);
   api.registerTool(tool);
 
-  // Register CLI commands
-  const cli = registerCli({
+  // Register CLI commands (openclaw ouraclaw setup|status|test)
+  registerCli(api, {
     getConfig,
     updateConfig,
     prompt: api.prompt,
@@ -23,5 +23,4 @@ export default function ouraclaw(api: any) {
     registerCronJob: api.registerCronJob,
     unregisterCronJob: api.unregisterCronJob,
   });
-  api.registerCommand(cli);
 }
