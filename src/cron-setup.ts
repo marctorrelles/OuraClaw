@@ -11,27 +11,52 @@ function runOpenclaw(args: string[]): string {
   return execFileSync("openclaw", args, { encoding: "utf-8" }).trim();
 }
 
-function findJobIdByName(name: string): string | null {
+function listAllJobs(): any[] {
   try {
     const output = runOpenclaw(["cron", "list", "--json"]);
     const data = JSON.parse(output);
-    const jobs: any[] = Array.isArray(data) ? data : data?.jobs || [];
-    const job = jobs.find((j: any) => j.name === name);
-    return job?.id || null;
+    return Array.isArray(data) ? data : data?.jobs || [];
   } catch {
-    return null;
+    return [];
   }
 }
+
+const OURACLAW_JOB_NAMES = [
+  "OuraClaw Morning Summary",
+  "OuraClaw Evening Summary",
+  "ouraclaw-morning",
+  "ouraclaw-evening",
+];
 
 export function createCronJobs(config: OuraConfig): void {
   const timezone = config.timezone || "UTC";
   const morningTime = config.morningTime || "07:00";
   const eveningTime = config.eveningTime || "21:00";
 
-  // Remove existing jobs first
-  removeCronJobs(config);
+  // Single list call to find all jobs to remove
+  const existingJobs = listAllJobs();
+  const idsToRemove = new Set<string>();
 
-  // Morning job
+  // By stored UUID
+  if (config.morningCronJobId) idsToRemove.add(config.morningCronJobId);
+  if (config.eveningCronJobId) idsToRemove.add(config.eveningCronJobId);
+
+  // By name (handles upgrades from older naming or missing UUIDs)
+  for (const job of existingJobs) {
+    if (OURACLAW_JOB_NAMES.includes(job.name)) {
+      idsToRemove.add(job.id);
+    }
+  }
+
+  for (const id of idsToRemove) {
+    try {
+      runOpenclaw(["cron", "remove", id]);
+    } catch {
+      // Job may already be gone
+    }
+  }
+
+  // Create morning job
   const morningMsg = [
     "Fetch my Oura Ring data for this morning's summary.",
     "Use the oura_data tool to get daily_sleep, sleep (detailed periods), daily_readiness, daily_activity, and daily_stress for today.",
@@ -59,7 +84,7 @@ export function createCronJobs(config: OuraConfig): void {
 
   runOpenclaw(morningArgs);
 
-  // Evening job
+  // Create evening job
   const eveningMsg = [
     "Fetch my Oura Ring data for this evening's summary.",
     "Use the oura_data tool to get daily_activity, daily_readiness, daily_stress, and daily_sleep for today.",
@@ -86,42 +111,35 @@ export function createCronJobs(config: OuraConfig): void {
 
   runOpenclaw(eveningArgs);
 
-  // Look up the UUIDs that were just assigned
-  const morningId = findJobIdByName("OuraClaw Morning Summary");
-  const eveningId = findJobIdByName("OuraClaw Evening Summary");
+  // Single list call to look up both new UUIDs
+  const newJobs = listAllJobs();
+  const morningJob = newJobs.find((j: any) => j.name === "OuraClaw Morning Summary");
+  const eveningJob = newJobs.find((j: any) => j.name === "OuraClaw Evening Summary");
 
   updateConfig({
-    morningCronJobId: morningId || undefined,
-    eveningCronJobId: eveningId || undefined,
+    morningCronJobId: morningJob?.id || undefined,
+    eveningCronJobId: eveningJob?.id || undefined,
   });
 }
 
 export function removeCronJobs(config: OuraConfig): void {
-  // Try removing by stored UUID first
-  if (config.morningCronJobId) {
-    try {
-      runOpenclaw(["cron", "remove", config.morningCronJobId]);
-    } catch {
-      // Job may not exist
-    }
-  }
-  if (config.eveningCronJobId) {
-    try {
-      runOpenclaw(["cron", "remove", config.eveningCronJobId]);
-    } catch {
-      // Job may not exist
+  const existingJobs = listAllJobs();
+  const idsToRemove = new Set<string>();
+
+  if (config.morningCronJobId) idsToRemove.add(config.morningCronJobId);
+  if (config.eveningCronJobId) idsToRemove.add(config.eveningCronJobId);
+
+  for (const job of existingJobs) {
+    if (OURACLAW_JOB_NAMES.includes(job.name)) {
+      idsToRemove.add(job.id);
     }
   }
 
-  // Also try by name in case UUIDs weren't stored (e.g., upgrade from older version)
-  for (const name of ["OuraClaw Morning Summary", "OuraClaw Evening Summary", "ouraclaw-morning", "ouraclaw-evening"]) {
-    const id = findJobIdByName(name);
-    if (id && id !== config.morningCronJobId && id !== config.eveningCronJobId) {
-      try {
-        runOpenclaw(["cron", "remove", id]);
-      } catch {
-        // Job may not exist
-      }
+  for (const id of idsToRemove) {
+    try {
+      runOpenclaw(["cron", "remove", id]);
+    } catch {
+      // Job may already be gone
     }
   }
 
