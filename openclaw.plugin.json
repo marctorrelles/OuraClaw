@@ -1,4 +1,5 @@
 {
+  "id": "ouraclaw",
   "name": "ouraclaw",
   "displayName": "OuraClaw",
   "description": "Oura Ring health data integration for OpenClaw",
