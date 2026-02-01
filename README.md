@@ -39,7 +39,7 @@ openclaw ouraclaw setup
 The wizard will walk you through:
 
 1. **Create an Oura application**
-   - Go to [https://cloud.ouraring.com](https://cloud.ouraring.com)
+   - Go to [https://developer.ouraring.com](https://developer.ouraring.com)
    - Navigate to "My Applications" and create a new app
    - Set the redirect URI to `http://localhost:9876/callback`
 

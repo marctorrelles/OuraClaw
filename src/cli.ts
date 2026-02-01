@@ -58,7 +58,24 @@ function openUrl(url: string): void {
   exec(cmd);
 }
 
+function getConfiguredChannels(openclawConfig: any): string[] {
+  const channels: string[] = [];
+  const channelsConfig = openclawConfig?.channels;
+  if (channelsConfig && typeof channelsConfig === "object") {
+    for (const channelId of Object.keys(channelsConfig)) {
+      const channelConf = channelsConfig[channelId];
+      // A channel is configured if it has at least one account
+      if (channelConf?.accounts && Object.keys(channelConf.accounts).length > 0) {
+        channels.push(channelId);
+      }
+    }
+  }
+  return channels;
+}
+
 export function registerCli(api: any) {
+  const openclawConfig = api.config;
+
   api.registerCli(
     ({ program }: { program: any }) => {
       const ouraclaw = program
@@ -68,7 +85,7 @@ export function registerCli(api: any) {
       ouraclaw
         .command("setup")
         .description("Set up Oura Ring connection and scheduled summaries")
-        .action(() => setupCommand());
+        .action(() => setupCommand(openclawConfig));
 
       ouraclaw
         .command("status")
@@ -84,13 +101,13 @@ export function registerCli(api: any) {
   );
 }
 
-async function setupCommand(): Promise<void> {
+async function setupCommand(openclawConfig: any): Promise<void> {
   const rl = createPromptInterface();
 
   try {
     console.log("\n=== OuraClaw Setup ===\n");
     console.log("Before proceeding, create an Oura application:");
-    console.log("  1. Go to https://cloud.ouraring.com");
+    console.log("  1. Go to https://developer.ouraring.com");
     console.log('  2. Navigate to "My Applications"');
     console.log("  3. Create a new application");
     console.log("  4. Set the redirect URI to: http://localhost:9876/callback");
@@ -117,15 +134,19 @@ async function setupCommand(): Promise<void> {
     console.log("Tokens saved successfully.\n");
 
     // Step 3: Channel preference
-    const channelChoice = await select(rl, "Preferred delivery channel:", [
-      "default (active channel at delivery time)",
-      "imessage",
-      "slack",
-      "discord",
-      "telegram",
-    ]);
+    const configuredChannels = getConfiguredChannels(openclawConfig);
+    const channelChoices = ["default (active channel at delivery time)"];
+    if (configuredChannels.length > 0) {
+      channelChoices.push(...configuredChannels);
+    }
 
-    const channel = channelChoice.startsWith("default") ? "default" : channelChoice;
+    let channel = "default";
+    if (channelChoices.length === 1) {
+      console.log("No messaging channels configured. Using default (active channel at delivery time).");
+    } else {
+      const channelChoice = await select(rl, "Preferred delivery channel:", channelChoices);
+      channel = channelChoice.startsWith("default") ? "default" : channelChoice;
+    }
     let channelTarget: string | undefined;
 
     if (channel !== "default") {
