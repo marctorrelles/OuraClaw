@@ -278,7 +278,7 @@ async function setupCommand(): Promise<void> {
         timezone,
       });
 
-      withProgress("\nCreating cron jobs", () => createCronJobs(readConfig()));
+      withProgress("\nScheduling daily summaries", () => createCronJobs(readConfig()));
     } else {
       updateConfig({ scheduledMessages: false });
 
