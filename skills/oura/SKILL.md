@@ -62,12 +62,74 @@ You have access to the user's Oura Ring data through the `oura_data` tool. Use i
 - Convert all durations from seconds to Xh Ym format
 - Add brief, personalized context when relevant (e.g., "HRV is trending lower than usual")
 - Keep summaries scannable — the user may be reading on a phone
+- **Adapt formatting to the delivery channel** — see Channel Formatting Guide below
+
+## Channel Formatting Guide
+
+Different messaging channels support different formatting syntax. Use the correct format for the delivery channel. When the channel is unknown or "default", use plain text formatting (safe everywhere).
+
+### Plain text — iMessage (bluebubbles), Signal
+
+No text-based formatting syntax is supported. Characters like `*`, `_`, and `~` appear literally.
+
+- Use emoji and whitespace for visual structure
+- Use UPPERCASE sparingly for emphasis if needed (e.g., "SLEEP: 82")
+- URLs are auto-linked — just include them as plain text
+- Use `|` or `·` as inline separators
+- Use `—` (em dash) for inline breaks
+
+### WhatsApp
+
+- **Bold**: `*text*`
+- **Italic**: `_text_`
+- **Strikethrough**: `~text~`
+- **Inline code**: `` `text` ``
+- **Lists**: `- item` at the start of a line
+- URLs are auto-linked — do NOT use markdown link syntax `[text](url)`
+
+### Telegram
+
+Supports Markdown-style formatting:
+
+- **Bold**: `*text*`
+- **Italic**: `_text_`
+- **Underline**: `__text__`
+- **Strikethrough**: `~text~`
+- **Links**: `[display text](url)`
+- Escape special characters (`.`, `-`, `(`, `)`, `!`, etc.) with `\` when they appear outside formatting
+
+### Slack
+
+Uses Slack's mrkdwn syntax (not standard Markdown):
+
+- **Bold**: `*text*`
+- **Italic**: `_text_`
+- **Strikethrough**: `~text~`
+- **Links**: `<url|display text>`
+- **Lists**: `- item` or `• item`
+- Do NOT use standard Markdown bold (`**text**`) or link syntax (`[text](url)`)
+
+### Discord
+
+Uses standard Markdown:
+
+- **Bold**: `**text**`
+- **Italic**: `*text*`
+- **Underline**: `__text__`
+- **Strikethrough**: `~~text~~`
+- **Links**: `[display text](url)`
+- **Lists**: `- item`
+- **Headers**: `#`, `##`, `###` (at start of line)
+
+### WebChat / Default
+
+Use standard Markdown formatting.
 
 ## Morning Summary Template
 
 When delivering a morning summary, fetch `daily_sleep`, `sleep` (detailed periods), `daily_readiness`, `daily_activity`, and `daily_stress` for today. Also fetch yesterday's `daily_activity` as a fallback.
 
-Send only the formatted summary — no preamble, intro message, or extra commentary before or after it.
+Send only the formatted summary — no preamble, intro message, or extra commentary before or after it. Apply the correct formatting syntax for the delivery channel (see Channel Formatting Guide).
 
 Format rules:
 - Start with "Good morning!" and today's date
@@ -77,8 +139,9 @@ Format rules:
 - **Stress**: mention if data is available (normal, high, etc.). If no stress data, skip it.
 - No app links at the end.
 - Keep it concise — 8–10 lines max. Use emoji sparingly. Warm but not cheesy.
+- Bold the category labels and scores on channels that support bold (e.g., `*Sleep: 82 (Good)*` on WhatsApp/Telegram/Slack, `**Sleep: 82 (Good)**` on Discord). On plain text channels (iMessage, Signal), do not use any formatting markers.
 
-Example tone:
+Example tone (plain text / iMessage):
 
 ```
 Good morning! Here's your recap for Monday, Jan 27.
@@ -97,11 +160,30 @@ Stress: normal range
 Solid night overall — deep sleep was a bit short but REM made up for it. Enjoy your day!
 ```
 
+Example tone (WhatsApp / Telegram / Slack):
+
+```
+Good morning! Here's your recap for Monday, Jan 27.
+
+😴 *Sleep: 82 (Good)* — 7h 12m total
+Deep 58m | REM 1h 24m | Light 4h 50m
+Lowest HR 52 bpm | Avg HR 58 bpm | HRV 42 ms
+
+💪 *Readiness: 78 (Good)*
+Body temp +0.1°C | HRV balance solid | Recovery index slightly low
+
+🏃 *Activity (yesterday): 74 (Good)* — 8,241 steps, 312 active cal
+
+Stress: normal range
+
+Solid night overall — deep sleep was a bit short but REM made up for it. Enjoy your day!
+```
+
 ## Evening Summary Template
 
 When delivering an evening summary, fetch `daily_activity`, `daily_readiness`, `daily_stress`, and `daily_sleep` for today.
 
-Send only the formatted summary — no preamble, intro message, or extra commentary before or after it.
+Send only the formatted summary — no preamble, intro message, or extra commentary before or after it. Apply the correct formatting syntax for the delivery channel (see Channel Formatting Guide).
 
 Format rules:
 - Start with "Good evening!" and today's date
@@ -110,8 +192,9 @@ Format rules:
 - Briefly mention last night's sleep score as a one-line recap.
 - End with a short, genuine motivational nudge to wind down and get to bed soon for good recovery. Be warm, not preachy.
 - Keep it concise — 6–8 lines max. Use emoji sparingly.
+- Bold the category labels and scores on channels that support bold. On plain text channels (iMessage, Signal), do not use any formatting markers.
 
-Example tone:
+Example tone (plain text / iMessage):
 
 ```
 Good evening! Here's your day in review for Monday, Jan 27.
@@ -119,6 +202,18 @@ Good evening! Here's your day in review for Monday, Jan 27.
 🏃 Activity: 81 (Good) — 9,432 steps, 387 active cal, 2,145 total cal
 📊 Readiness: 78 (Good) | Stress: normal range
 😴 Last night's sleep: 82 (Good)
+
+Nice active day — you moved well. Wind down soon and aim for a solid bedtime to keep the momentum going.
+```
+
+Example tone (WhatsApp / Telegram / Slack):
+
+```
+Good evening! Here's your day in review for Monday, Jan 27.
+
+🏃 *Activity: 81 (Good)* — 9,432 steps, 387 active cal, 2,145 total cal
+📊 *Readiness: 78 (Good)* | Stress: normal range
+😴 *Last night's sleep: 82 (Good)*
 
 Nice active day — you moved well. Wind down soon and aim for a solid bedtime to keep the momentum going.
 ```

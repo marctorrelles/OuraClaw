@@ -57,7 +57,13 @@ export function createCronJobs(config: OuraConfig): void {
   }
 
   // Create morning job
-  const morningMsg = "Deliver my Oura Ring morning health summary following the oura skill's Morning Summary Template.";
+  const channel = config.preferredChannel && config.preferredChannel !== "default"
+    ? config.preferredChannel
+    : "";
+  const channelNote = channel
+    ? ` The delivery channel is ${channel}.`
+    : "";
+  const morningMsg = `Deliver my Oura Ring morning health summary following the oura skill's Morning Summary Template.${channelNote}`;
 
   const morningArgs = [
     "cron", "add",
@@ -79,7 +85,7 @@ export function createCronJobs(config: OuraConfig): void {
   runOpenclaw(morningArgs);
 
   // Create evening job
-  const eveningMsg = "Deliver my Oura Ring evening health summary following the oura skill's Evening Summary Template.";
+  const eveningMsg = `Deliver my Oura Ring evening health summary following the oura skill's Evening Summary Template.${channelNote}`;
 
   const eveningArgs = [
     "cron", "add",
