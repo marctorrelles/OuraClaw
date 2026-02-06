@@ -61,7 +61,7 @@ export function createCronJobs(config: OuraConfig): void {
     ? config.preferredChannel
     : "";
   const channelNote = channel
-    ? ` The delivery channel is ${channel}.`
+    ? ` Format for the ${channel} channel.`
     : "";
   const morningMsg = `Deliver my Oura Ring morning health summary following the oura skill's Morning Summary Template.${channelNote}`;
 
