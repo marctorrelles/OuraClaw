@@ -125,6 +125,14 @@ Uses standard Markdown:
 
 Use standard Markdown formatting.
 
+## Scheduled Summary Delivery
+
+When producing a scheduled summary (morning or evening), follow these rules:
+
+- **Read the template carefully** and follow every format rule, including all specified data points, line counts, and examples.
+- **Send the complete formatted summary as a single message** to the channel and target specified in the request. Do not summarize, abbreviate, or rephrase the summary.
+- **Apply channel-appropriate formatting** using the Channel Formatting Guide above based on the channel specified in the request.
+
 ## Morning Summary Template
 
 When delivering a morning summary, fetch `daily_sleep`, `sleep` (detailed periods), `daily_readiness`, `daily_activity`, and `daily_stress` for today. Also fetch yesterday's `daily_activity` as a fallback.

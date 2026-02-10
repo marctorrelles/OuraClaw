@@ -1,4 +1,5 @@
 import { execFileSync } from "child_process";
+import path from "path";
 import { OuraConfig } from "./types";
 import { updateConfig } from "./token-store";
 
@@ -56,14 +57,23 @@ export function createCronJobs(config: OuraConfig): void {
     }
   }
 
-  // Create morning job
+  // Create morning & evening jobs
   const channel = config.preferredChannel && config.preferredChannel !== "default"
     ? config.preferredChannel
     : "";
-  const channelNote = channel
-    ? ` Format for the ${channel} channel.`
+  const target = config.preferredChannelTarget || "";
+  const skillPath = path.resolve(__dirname, "..", "skills", "oura", "SKILL.md");
+
+  // When a specific channel is configured, disable announce mode (which
+  // summarises the output) and instruct the agent to send the message
+  // directly via its messaging tool. When no channel is set, fall back to
+  // the default announce delivery.
+  const sendDirectly = channel && target;
+  const channelPart = sendDirectly
+    ? ` Channel: ${channel}. Target: ${target}.`
     : "";
-  const morningMsg = `Deliver my Oura Ring morning health summary following the oura skill's Morning Summary Template.${channelNote}`;
+
+  const morningMsg = `Read ${skillPath} and follow the Morning Summary Template.${channelPart}`;
 
   const morningArgs = [
     "cron", "add",
@@ -72,20 +82,15 @@ export function createCronJobs(config: OuraConfig): void {
     "--tz", timezone,
     "--session", "isolated",
     "--message", morningMsg,
-    "--deliver",
   ];
 
-  if (config.preferredChannel && config.preferredChannel !== "default") {
-    morningArgs.push("--channel", config.preferredChannel);
-    if (config.preferredChannelTarget) {
-      morningArgs.push("--to", config.preferredChannelTarget);
-    }
+  if (sendDirectly) {
+    morningArgs.push("--no-deliver");
   }
 
   runOpenclaw(morningArgs);
 
-  // Create evening job
-  const eveningMsg = `Deliver my Oura Ring evening health summary following the oura skill's Evening Summary Template.${channelNote}`;
+  const eveningMsg = `Read ${skillPath} and follow the Evening Summary Template.${channelPart}`;
 
   const eveningArgs = [
     "cron", "add",
@@ -94,14 +99,10 @@ export function createCronJobs(config: OuraConfig): void {
     "--tz", timezone,
     "--session", "isolated",
     "--message", eveningMsg,
-    "--deliver",
   ];
 
-  if (config.preferredChannel && config.preferredChannel !== "default") {
-    eveningArgs.push("--channel", config.preferredChannel);
-    if (config.preferredChannelTarget) {
-      eveningArgs.push("--to", config.preferredChannelTarget);
-    }
+  if (sendDirectly) {
+    eveningArgs.push("--no-deliver");
   }
 
   runOpenclaw(eveningArgs);
