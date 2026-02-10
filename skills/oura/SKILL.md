@@ -137,7 +137,7 @@ Format rules:
 - **Readiness**: score with label, body temperature deviation, HRV balance, recovery index. Call out anything that's dragging the score down.
 - **Activity**: use today's `daily_activity` if available (score, steps, active calories). If score is null or data is missing, use yesterday's activity instead and note that it's yesterday's data.
 - **Stress**: mention if data is available (normal, high, etc.). If no stress data, skip it.
-- No app links at the end.
+- End with: "Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — enjoy your day!" (include trailing text after the URL so it renders inline, not as a separate link preview).
 - Keep it concise — 8–10 lines max. Use emoji sparingly. Warm but not cheesy.
 - Bold the category labels and scores on channels that support bold (e.g., `*Sleep: 82 (Good)*` on WhatsApp/Telegram/Slack, `**Sleep: 82 (Good)**` on Discord). On plain text channels (iMessage, Signal), do not use any formatting markers.
 
@@ -157,7 +157,9 @@ Body temp +0.1°C | HRV balance solid | Recovery index slightly low
 
 Stress: normal range
 
-Solid night overall — deep sleep was a bit short but REM made up for it. Enjoy your day!
+Solid night overall — deep sleep was a bit short but REM made up for it.
+
+Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — enjoy your day!
 ```
 
 Example tone (WhatsApp / Telegram / Slack):
@@ -176,21 +178,23 @@ Body temp +0.1°C | HRV balance solid | Recovery index slightly low
 
 Stress: normal range
 
-Solid night overall — deep sleep was a bit short but REM made up for it. Enjoy your day!
+Solid night overall — deep sleep was a bit short but REM made up for it.
+
+Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — enjoy your day!
 ```
 
 ## Evening Summary Template
 
-When delivering an evening summary, fetch `daily_activity`, `daily_readiness`, `daily_stress`, and `daily_sleep` for today.
+When delivering an evening summary, fetch `daily_activity`, `daily_readiness`, `daily_stress`, and `daily_sleep` for today. Also fetch yesterday's `daily_activity` as a fallback in case today's data isn't available yet.
 
 Send only the formatted summary — no preamble, intro message, or extra commentary before or after it. Apply the correct formatting syntax for the delivery channel (see Channel Formatting Guide).
 
 Format rules:
 - Start with "Good evening!" and today's date
-- Focus on today's **activity**: score, steps, active calories, total calories.
+- Focus on today's **activity**: score, steps, active calories, total calories. If today's activity score is null or data is missing, use yesterday's activity instead and note that it's yesterday's data. Activity data must always be included — never show "pending" or skip it.
 - Include today's **readiness** and **stress**.
 - Briefly mention last night's sleep score as a one-line recap.
-- End with a short, genuine motivational nudge to wind down and get to bed soon for good recovery. Be warm, not preachy.
+- End with a short, genuine motivational nudge to wind down, then: "Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — sleep well!" (include trailing text after the URL so it renders inline).
 - Keep it concise — 6–8 lines max. Use emoji sparingly.
 - Bold the category labels and scores on channels that support bold. On plain text channels (iMessage, Signal), do not use any formatting markers.
 
@@ -204,6 +208,8 @@ Good evening! Here's your day in review for Monday, Jan 27.
 😴 Last night's sleep: 82 (Good)
 
 Nice active day — you moved well. Wind down soon and aim for a solid bedtime to keep the momentum going.
+
+Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — sleep well!
 ```
 
 Example tone (WhatsApp / Telegram / Slack):
@@ -216,6 +222,8 @@ Good evening! Here's your day in review for Monday, Jan 27.
 😴 *Last night's sleep: 82 (Good)*
 
 Nice active day — you moved well. Wind down soon and aim for a solid bedtime to keep the momentum going.
+
+Dive deeper in the Oura app: https://cloud.ouraring.com/app/v1/home — sleep well!
 ```
 
 ## Ad-hoc Query Mapping
