@@ -1,5 +1,5 @@
 import readline from "readline";
-import { exec, execSync, execFileSync } from "child_process";
+import { exec, execFileSync } from "child_process";
 import { OuraConfig } from "./types";
 import {
   buildAuthorizeUrl,
@@ -93,12 +93,16 @@ interface ChannelTarget {
   target: string;
 }
 
+function runOpenclaw(args: string[]): string {
+  return execFileSync(process.execPath, [process.argv[1], ...args], {
+    encoding: "utf-8",
+    timeout: 10_000,
+  }).trim();
+}
+
 function getChannelConfig(channelId: string): any {
   try {
-    const output = execFileSync("openclaw", ["config", "get", `channels.${channelId}`], {
-      encoding: "utf-8",
-      timeout: 10_000,
-    });
+    const output = runOpenclaw(["config", "get", `channels.${channelId}`]);
     return JSON.parse(output);
   } catch {
     return null;
@@ -109,10 +113,7 @@ function getConfiguredChannelTargets(): ChannelTarget[] {
   // First, get the list of configured channels
   let channelIds: string[] = [];
   try {
-    const output = execSync("openclaw channels list --json --no-usage", {
-      encoding: "utf-8",
-      timeout: 10_000,
-    });
+    const output = runOpenclaw(["channels", "list", "--json", "--no-usage"]);
     const data = JSON.parse(output);
     const chat = data?.chat;
     if (chat && typeof chat === "object") {
@@ -200,11 +201,16 @@ async function setupCommand(): Promise<void> {
 
     if (!skipOAuth) {
       const authorizeUrl = buildAuthorizeUrl(clientId);
-      console.log("\nOpening browser to authorize OuraClaw...");
-      openUrl(authorizeUrl);
+      console.log("\nOpen this URL in your browser to authorize OuraClaw:");
+      console.log(`\n  ${authorizeUrl}\n`);
+      openUrl(authorizeUrl); // no-op in remote envs, convenient locally
 
-      console.log("Waiting for OAuth callback on http://localhost:9876/callback ...");
-      const code = await captureOAuthCallback();
+      console.log("Waiting for authorization...");
+      console.log("  - Local machine: the callback will be captured automatically.");
+      console.log("  - Remote/SSH: after authorizing, your browser will try to open");
+      console.log("    http://localhost:9876/callback?code=... — copy that full URL");
+      console.log("    and paste it here, then press Enter.\n");
+      const code = await captureOAuthCallback(rl);
 
       await withProgress("Exchanging code for tokens", async () => {
         const tokenResponse = await exchangeCodeForTokens(clientId, clientSecret, code);
@@ -278,13 +284,22 @@ async function setupCommand(): Promise<void> {
         timezone,
       });
 
-      withProgress("\nScheduling daily summaries", () => createCronJobs(readConfig()));
+      try {
+        withProgress("\nScheduling daily summaries", () => createCronJobs(readConfig()));
+      } catch (err: any) {
+        console.log(`  Warning: could not register cron jobs (${err.message})`);
+        console.log("  You can re-run setup later once openclaw is in PATH.");
+      }
     } else {
       updateConfig({ scheduledMessages: false });
 
       const config = readConfig();
       if (config.morningCronJobId || config.eveningCronJobId) {
-        withProgress("Removing existing cron jobs", () => removeCronJobs(config));
+        try {
+          withProgress("Removing existing cron jobs", () => removeCronJobs(config));
+        } catch {
+          // Best-effort cleanup
+        }
       }
     }
 

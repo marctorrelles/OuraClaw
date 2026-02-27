@@ -9,7 +9,13 @@ function timeToCron(time: string): string {
 }
 
 function runOpenclaw(args: string[]): string {
-  return execFileSync("openclaw", args, { encoding: "utf-8" }).trim();
+  // Re-invoke the same openclaw script via the current node binary.
+  // This avoids PATH lookup failures in remote/container environments where
+  // 'openclaw' is not on PATH but the script is already running as process.argv[1].
+  return execFileSync(process.execPath, [process.argv[1], ...args], {
+    encoding: "utf-8",
+    timeout: 30_000,
+  }).trim();
 }
 
 function listAllJobs(): any[] {

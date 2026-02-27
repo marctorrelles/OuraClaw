@@ -1,6 +1,7 @@
 import http from "http";
 import https from "https";
 import { URL } from "url";
+import type readline from "readline";
 import { OuraTokenResponse } from "./types";
 
 const AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize";
@@ -84,8 +85,23 @@ function postTokenRequest(
   });
 }
 
-export function captureOAuthCallback(): Promise<string> {
+export function captureOAuthCallback(rl: readline.Interface): Promise<string> {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    let lineHandler: ((line: string) => void) | null = null;
+
+    const settle = (code?: string, err?: Error) => {
+      if (settled) return;
+      settled = true;
+      server.close();
+      if (lineHandler) {
+        rl.removeListener("line", lineHandler);
+        lineHandler = null;
+      }
+      if (err) reject(err);
+      else resolve(code!);
+    };
+
     const server = http.createServer((req, res) => {
       if (!req.url?.startsWith("/callback")) {
         res.writeHead(404);
@@ -93,23 +109,21 @@ export function captureOAuthCallback(): Promise<string> {
         return;
       }
 
-      const url = new URL(req.url, `http://localhost:9876`);
+      const url = new URL(req.url, "http://localhost:9876");
       const code = url.searchParams.get("code");
       const error = url.searchParams.get("error");
 
       if (error) {
         res.writeHead(400);
         res.end(`Authorization error: ${error}`);
-        server.close();
-        reject(new Error(`OAuth error: ${error}`));
+        settle(undefined, new Error(`OAuth error: ${error}`));
         return;
       }
 
       if (!code) {
         res.writeHead(400);
         res.end("Missing authorization code");
-        server.close();
-        reject(new Error("Missing authorization code in callback"));
+        settle(undefined, new Error("Missing authorization code in callback"));
         return;
       }
 
@@ -117,22 +131,47 @@ export function captureOAuthCallback(): Promise<string> {
       res.end(
         "<html><body><h2>OuraClaw authorized!</h2><p>You can close this tab and return to the terminal.</p></body></html>",
       );
-      server.close();
-      resolve(code);
+      console.log("\nOAuth callback received automatically.");
+      settle(code);
     });
 
-    server.listen(9876, () => {
-      // Server is ready, waiting for callback
+    // Start local server (works when browser runs on the same machine)
+    server.listen(9876);
+    server.on("error", () => {
+      // Port unavailable — that's fine, manual paste still works
     });
 
-    server.on("error", (err) => {
-      reject(new Error(`Failed to start OAuth callback server: ${err.message}`));
-    });
+    // Manual fallback: user pastes the redirect URL or raw code
+    lineHandler = (input: string) => {
+      const trimmed = input.trim();
+      if (!trimmed || settled) return;
 
-    // Timeout after 2 minutes
+      let code: string | null = null;
+      try {
+        const parsed = new URL(trimmed);
+        const error = parsed.searchParams.get("error");
+        if (error) {
+          settle(undefined, new Error(`OAuth error: ${error}`));
+          return;
+        }
+        code = parsed.searchParams.get("code");
+      } catch {
+        // Not a URL — treat as raw authorization code
+        code = trimmed;
+      }
+
+      if (code) {
+        settle(code);
+      } else {
+        process.stdout.write("No code found in that input. Paste the full redirect URL or just the code: ");
+      }
+    };
+
+    rl.on("line", lineHandler);
+
+    // Timeout after 5 minutes
     setTimeout(() => {
-      server.close();
-      reject(new Error("OAuth callback timed out after 2 minutes"));
-    }, 120_000);
+      settle(undefined, new Error("OAuth callback timed out after 5 minutes"));
+    }, 300_000);
   });
 }
